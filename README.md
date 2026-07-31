@@ -1,22 +1,4 @@
-Viewed README.md:1-2
-Edited README.md
-Ran command: `git add README.md`
-Ran command: `git commit -m "Update README.md with comprehensive documentation"`
-Ran command: `git push origin main`
-Ran command: `git pull --rebase origin main`
-Ran command: `git checkout --ours README.md`
-Ran command: `git add README.md`
-Ran command: `git rebase --continue`
-Ran command: `git push origin main`
-Ran command: `Copy-Item "c:\Users\prave\Downloads\smart community services\NoBrokerHood-main\README.md" "C:\Users\prave\Desktop\Smart_Community_Services\README.md" -Force`
-Ran command: `Compress-Archive -Path "C:\Users\prave\Desktop\Smart_Community_Services" -DestinationPath "C:\Users\prave\Desktop\Smart_Community_Services.zip" -Force`
-
-The `README.md` file has been created, saved to your project, pushed live to your **GitHub Repository**, and synced to your Desktop!
-
-Here is the exact markdown content of your GitHub repository's **`README.md`**:
-
-```markdown
-# 🏢 Smart Community Services (NoBrokerHood)
+# 🏢 Smart Community Services 
 
 A comprehensive, full-stack Smart Gated-Community Management System built with **React**, **TypeScript**, **Node.js**, **Express**, **Prisma ORM**, **SQLite**, and **Socket.io**.
 
