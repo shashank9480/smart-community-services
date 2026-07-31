@@ -116,7 +116,7 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 ---
 
-Made with ❤️ by [Shashank](https://github.com/shashank9480)
+Made  by [Shashank](https://github.com/shashank9480)
 ```
 
 ### GitHub Link:
