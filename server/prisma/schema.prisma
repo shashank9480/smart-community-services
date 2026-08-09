@@ -1,0 +1,399 @@
+// Smart Community Services Complete Prisma Schema
+// Covers Foundation, Gate Management, Staff, ERP, Helpdesk, and Community/SOS modules.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+  // To use PostgreSQL instead of SQLite, swap provider and set DATABASE_URL to your postgres uri:
+  // provider = "postgresql"
+  // url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(uuid())
+  name          String
+  email         String    @unique
+  phone         String    @unique
+  password_hash String
+  role          String    @default("RESIDENT") // RESIDENT, GUARD, ADMIN, STAFF_MANAGER
+  flat_id       String?
+  society_id    String?
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+
+  // Relations
+  flat          Flat?     @relation("FlatResidents", fields: [flat_id], references: [id], onDelete: SetNull)
+  owned_flats   Flat[]    @relation("FlatOwner")
+  society       Society?  @relation(fields: [society_id], references: [id], onDelete: Cascade)
+
+  // Module 2 relations
+  created_passes VisitorPass[] @relation("PassCreator")
+  gate_logs      GateLog[]     @relation("GuardLogs")
+  parcels_logged Parcel[]      @relation("GuardParcels")
+
+  // Module 3 relations
+  verified_attendance StaffAttendance[] @relation("GuardVerifier")
+  staff_reviews       StaffReview[]     @relation("Reviewer")
+
+  // Module 5 relations
+  raised_tickets      Ticket[]          @relation("TicketCreator")
+  assigned_tickets    Ticket[]          @relation("TicketAssignee")
+
+  // Module 6 relations
+  notices             Notice[]          @relation("NoticeAuthor")
+  forum_posts         ForumPost[]       @relation("PostAuthor")
+  comments            Comment[]         @relation("CommentAuthor")
+
+  @@map("users")
+}
+
+model Society {
+  id            String    @id @default(uuid())
+  name          String
+  address       String
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+
+  // Relations
+  blocks        Block[]
+  users         User[]
+  facilities    Facility[]
+  notices       Notice[]
+  forum_posts   ForumPost[]
+
+  @@map("societies")
+}
+
+model Block {
+  id            String    @id @default(uuid())
+  society_id    String
+  name          String
+  created_at    DateTime  @default(now())
+
+  // Relations
+  society       Society   @relation(fields: [society_id], references: [id], onDelete: Cascade)
+  flats         Flat[]
+
+  @@map("blocks")
+}
+
+model Flat {
+  id            String    @id @default(uuid())
+  block_id      String
+  number        String
+  bhk_type      String    // e.g., "2BHK", "3BHK"
+  sqft          Float     @default(1200.0)
+  owner_id      String?
+  created_at    DateTime  @default(now())
+
+  // Relations
+  block         Block     @relation(fields: [block_id], references: [id], onDelete: Cascade)
+  owner         User?     @relation("FlatOwner", fields: [owner_id], references: [id], onDelete: SetNull)
+  residents     User[]    @relation("FlatResidents")
+
+  // Module 2 & 3 relations
+  parcels       Parcel[]
+  staff_assignments StaffAssignment[]
+  staff_attendance StaffAttendance[]
+
+  // Module 4 relations
+  invoices      Invoice[]
+  ledger_entries Ledger[]
+
+  // Module 6 relations
+  bookings      Booking[]
+  sos_alerts    SOSAlert[]
+
+  @@unique([block_id, number])
+  @@map("flats")
+}
+
+// ==========================================
+// Module 2: Visitor & Gate Management
+// ==========================================
+
+model VisitorPass {
+  id            String    @id @default(uuid())
+  code          String    @unique
+  created_by    String
+  guest_name    String
+  purpose       String
+  valid_from    DateTime
+  valid_to      DateTime
+  status        String    @default("active") // active, used, expired, cancelled
+  created_at    DateTime  @default(now())
+
+  creator       User      @relation("PassCreator", fields: [created_by], references: [id], onDelete: Cascade)
+
+  @@map("visitor_passes")
+}
+
+model GateLog {
+  id            String    @id @default(uuid())
+  type          String    // visitor, vehicle, staff
+  ref_id        String?   // code or ID reference
+  entry_time    DateTime  @default(now())
+  exit_time     DateTime?
+  vehicle_number String?
+  guard_id      String
+  created_at    DateTime  @default(now())
+
+  guard         User      @relation("GuardLogs", fields: [guard_id], references: [id], onDelete: Restrict)
+
+  @@map("gate_logs")
+}
+
+model Parcel {
+  id            String    @id @default(uuid())
+  flat_id       String
+  guard_id      String
+  otp           String
+  status        String    @default("pending") // pending, collected
+  created_at    DateTime  @default(now())
+  collected_at  DateTime?
+
+  flat          Flat      @relation(fields: [flat_id], references: [id], onDelete: Cascade)
+  guard         User      @relation("GuardParcels", fields: [guard_id], references: [id], onDelete: Restrict)
+
+  @@map("parcels")
+}
+
+// ==========================================
+// Module 3: Staff & Attendance
+// ==========================================
+
+model Staff {
+  id            String    @id @default(uuid())
+  name          String
+  phone         String    @unique
+  category      String    // maid, driver, cook, plumber, electrician, etc.
+  photo_url     String?
+  avg_rating    Float     @default(5.0)
+  created_at    DateTime  @default(now())
+
+  // Relations
+  assignments   StaffAssignment[]
+  attendance    StaffAttendance[]
+  reviews       StaffReview[]
+
+  @@map("staff")
+}
+
+model StaffAssignment {
+  id            String    @id @default(uuid())
+  staff_id      String
+  flat_id       String
+  created_at    DateTime  @default(now())
+
+  staff         Staff     @relation(fields: [staff_id], references: [id], onDelete: Cascade)
+  flat          Flat      @relation(fields: [flat_id], references: [id], onDelete: Cascade)
+
+  @@unique([staff_id, flat_id])
+  @@map("staff_assignments")
+}
+
+model StaffAttendance {
+  id            String    @id @default(uuid())
+  staff_id      String
+  flat_id       String?
+  punch_in      DateTime  @default(now())
+  punch_out     DateTime?
+  verified_by   String
+
+  staff         Staff     @relation(fields: [staff_id], references: [id], onDelete: Cascade)
+  flat          Flat?     @relation(fields: [flat_id], references: [id], onDelete: SetNull)
+  guard         User      @relation("GuardVerifier", fields: [verified_by], references: [id], onDelete: Restrict)
+
+  @@map("staff_attendance")
+}
+
+model StaffReview {
+  id            String    @id @default(uuid())
+  staff_id      String
+  reviewer_id   String
+  rating        Int       @default(5)
+  comment       String?
+  created_at    DateTime  @default(now())
+
+  staff         Staff     @relation(fields: [staff_id], references: [id], onDelete: Cascade)
+  reviewer      User      @relation("Reviewer", fields: [reviewer_id], references: [id], onDelete: Cascade)
+
+  @@map("staff_reviews")
+}
+
+// ==========================================
+// Module 4: ERP & Accounting
+// ==========================================
+
+model Invoice {
+  id            String    @id @default(uuid())
+  flat_id       String
+  month         String    // e.g. "2026-07"
+  amount        Float
+  breakdown_json String   // JSON string of { maintenance, sinking_fund, water, etc }
+  status        String    @default("pending") // pending, paid, overdue
+  due_date      DateTime
+  created_at    DateTime  @default(now())
+
+  flat          Flat      @relation(fields: [flat_id], references: [id], onDelete: Cascade)
+  payments      Payment[]
+
+  @@unique([flat_id, month])
+  @@map("invoices")
+}
+
+model Payment {
+  id            String    @id @default(uuid())
+  invoice_id    String
+  amount        Float
+  method        String    @default("razorpay")
+  txn_id        String?
+  status        String    @default("completed") // completed, failed, refunded
+  paid_at       DateTime  @default(now())
+
+  invoice       Invoice   @relation(fields: [invoice_id], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+model Ledger {
+  id            String    @id @default(uuid())
+  flat_id       String
+  type          String    // advance, arrear, credit, charge
+  amount        Float
+  note          String?
+  created_at    DateTime  @default(now())
+
+  flat          Flat      @relation(fields: [flat_id], references: [id], onDelete: Cascade)
+
+  @@map("ledgers")
+}
+
+// ==========================================
+// Module 5: Helpdesk
+// ==========================================
+
+model Ticket {
+  id            String    @id @default(uuid())
+  raised_by     String
+  category      String    // plumbing, electrical, carpentry, security, common_area
+  description   String
+  attachment_url String?
+  status        String    @default("Open") // Open, In Progress, Resolved
+  assigned_to   String?
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+
+  creator       User      @relation("TicketCreator", fields: [raised_by], references: [id], onDelete: Cascade)
+  assignee      User?     @relation("TicketAssignee", fields: [assigned_to], references: [id], onDelete: SetNull)
+  updates       TicketUpdate[]
+
+  @@map("tickets")
+}
+
+model TicketUpdate {
+  id            String    @id @default(uuid())
+  ticket_id     String
+  comment       String
+  status_change String?
+  created_at    DateTime  @default(now())
+
+  ticket        Ticket    @relation(fields: [ticket_id], references: [id], onDelete: Cascade)
+
+  @@map("ticket_updates")
+}
+
+// ==========================================
+// Module 6: Community & SOS
+// ==========================================
+
+model Facility {
+  id            String    @id @default(uuid())
+  society_id    String
+  name          String
+  type          String    // clubhouse, tennis, pool, gym, party_hall
+  rules         String?
+  slot_duration Int       @default(60) // in minutes
+  created_at    DateTime  @default(now())
+
+  society       Society   @relation(fields: [society_id], references: [id], onDelete: Cascade)
+  bookings      Booking[]
+
+  @@map("facilities")
+}
+
+model Booking {
+  id            String    @id @default(uuid())
+  facility_id   String
+  flat_id       String
+  date          String    // YYYY-MM-DD
+  slot          String    // e.g. "10:00-11:00"
+  status        String    @default("confirmed") // confirmed, cancelled
+  created_at    DateTime  @default(now())
+
+  facility      Facility  @relation(fields: [facility_id], references: [id], onDelete: Cascade)
+  flat          Flat      @relation(fields: [flat_id], references: [id], onDelete: Cascade)
+
+  @@unique([facility_id, date, slot])
+  @@map("bookings")
+}
+
+model Notice {
+  id            String    @id @default(uuid())
+  society_id    String
+  posted_by     String
+  title         String
+  body          String
+  created_at    DateTime  @default(now())
+
+  society       Society   @relation(fields: [society_id], references: [id], onDelete: Cascade)
+  author        User      @relation("NoticeAuthor", fields: [posted_by], references: [id], onDelete: Restrict)
+
+  @@map("notices")
+}
+
+model ForumPost {
+  id            String    @id @default(uuid())
+  society_id    String
+  author_id     String
+  title         String
+  body          String
+  category      String    @default("discussion") // discussion, marketplace
+  created_at    DateTime  @default(now())
+
+  society       Society   @relation(fields: [society_id], references: [id], onDelete: Cascade)
+  author        User      @relation("PostAuthor", fields: [author_id], references: [id], onDelete: Cascade)
+  comments      Comment[]
+
+  @@map("forum_posts")
+}
+
+model Comment {
+  id            String    @id @default(uuid())
+  post_id       String
+  author_id     String
+  body          String
+  created_at    DateTime  @default(now())
+
+  post          ForumPost @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  author        User      @relation("CommentAuthor", fields: [author_id], references: [id], onDelete: Cascade)
+
+  @@map("comments")
+}
+
+model SOSAlert {
+  id            String    @id @default(uuid())
+  flat_id       String
+  type          String    // medical, fire, gas, other
+  triggered_at  DateTime  @default(now())
+  resolved_at   DateTime?
+  status        String    @default("active") // active, resolved
+
+  flat          Flat      @relation(fields: [flat_id], references: [id], onDelete: Cascade)
+
+  @@map("sos_alerts")
+}
