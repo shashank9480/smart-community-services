@@ -13,6 +13,7 @@ import { AdminSocietiesPage } from './modules/foundation/AdminSocietiesPage.js';
 import { AdminBlocksPage } from './modules/foundation/AdminBlocksPage.js';
 import { AdminFlatsPage } from './modules/foundation/AdminFlatsPage.js';
 import { AdminResidentsPage } from './modules/foundation/AdminResidentsPage.js';
+import { AdminGuardsPage } from './modules/foundation/AdminGuardsPage.js';
 
 import { AdminVisitorsPage } from './modules/visitor/AdminVisitorsPage.js';
 import { ResidentPassesPage } from './modules/visitor/ResidentPassesPage.js';
@@ -73,6 +74,7 @@ export const App: React.FC = () => {
               <Route path="blocks" element={<AdminBlocksPage />} />
               <Route path="flats" element={<AdminFlatsPage />} />
               <Route path="residents" element={<AdminResidentsPage />} />
+              <Route path="guards" element={<AdminGuardsPage />} />
               <Route path="visitors" element={<AdminVisitorsPage />} />
               <Route path="staff" element={<AdminStaffPage />} />
               <Route path="invoices" element={<AdminInvoicesPage />} />

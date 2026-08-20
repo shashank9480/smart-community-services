@@ -164,7 +164,11 @@ export async function getUsers(req: AuthRequest, res: Response, next: NextFuncti
         role: true,
         created_at: true,
         flat: {
-          include: { block: true },
+          include: {
+            block: {
+              include: { society: true },
+            },
+          },
         },
         society: true,
       },

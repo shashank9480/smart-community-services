@@ -241,8 +241,8 @@ export const AdminDashboardPage: React.FC = () => {
                           <span className="text-slate-400 italic">Unassigned</span>
                         )}
                       </td>
-                      <td className="py-3 px-4 text-xs text-slate-600">
-                        {u.society?.name || 'Prestige Tranquility'}
+                      <td className="py-3 px-4 text-xs text-slate-600 font-medium">
+                        {u.society?.name || u.flat?.block?.society?.name || 'Prestige Tranquility'}
                       </td>
                     </motion.tr>
                   ))}

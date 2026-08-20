@@ -30,24 +30,45 @@ const reviewStaffSchema = z.object({
 
 export async function getStaff(req: AuthRequest, res: Response, next: NextFunction) {
   try {
+    const { society_id, category } = req.query;
+    const where: any = {};
+    if (category && category !== 'ALL') where.category = String(category);
+
     const staff = await prisma.staff.findMany({
+      where,
       include: {
         assignments: {
           include: {
-            flat: { include: { block: true } },
+            flat: { include: { block: { include: { society: true } } } },
           },
         },
         reviews: {
-          include: { reviewer: { select: { name: true } } },
+          include: { reviewer: { select: { id: true, name: true, email: true } } },
+          orderBy: { created_at: 'desc' },
         },
         attendance: {
           take: 5,
           orderBy: { punch_in: 'desc' },
-          include: { guard: { select: { name: true } } },
+          include: { guard: { select: { id: true, name: true } } },
         },
       },
+      orderBy: { avg_rating: 'desc' },
     });
-    return sendSuccess(res, staff);
+
+    let filteredStaff = staff;
+    if (society_id && String(society_id) !== 'ALL') {
+      const targetSocId = String(society_id);
+      filteredStaff = staff.filter((s) => {
+        // If staff is assigned to a flat in this society
+        const matchesAssignment = s.assignments.some(
+          (a) => a.flat?.block?.society_id === targetSocId || a.flat?.block?.society?.id === targetSocId
+        );
+        // Or if staff has no assignments yet, show in all
+        return matchesAssignment || s.assignments.length === 0;
+      });
+    }
+
+    return sendSuccess(res, filteredStaff);
   } catch (error) {
     next(error);
   }
