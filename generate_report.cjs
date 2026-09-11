@@ -6,10 +6,20 @@ const erDiagramBase64 = fs.existsSync(erDiagramPath)
   ? `data:image/png;base64,${fs.readFileSync(erDiagramPath).toString('base64')}`
   : '';
 
+const dfd0Path = path.join(__dirname, 'dfd_level_0.png');
+const dfd0Base64 = fs.existsSync(dfd0Path) ? `data:image/png;base64,${fs.readFileSync(dfd0Path).toString('base64')}` : '';
+
+const dfd1Path = path.join(__dirname, 'dfd_level_1.png');
+const dfd1Base64 = fs.existsSync(dfd1Path) ? `data:image/png;base64,${fs.readFileSync(dfd1Path).toString('base64')}` : '';
+
+const dfd2Path = path.join(__dirname, 'dfd_level_2.png');
+const dfd2Base64 = fs.existsSync(dfd2Path) ? `data:image/png;base64,${fs.readFileSync(dfd2Path).toString('base64')}` : '';
+
 const headerText = "SMART COMMUNITY SERVICES";
 const footerLeftText = "MCA 4TH SEM || CIMS";
 
 function makePage(pageNum, contentHtml, isCover = false) {
+  const pageIndex = htmlPages.length + 1;
   return `
   <div class="page ${isCover ? 'cover-page' : ''}">
     <div class="page-header">${headerText}</div>
@@ -18,7 +28,7 @@ function makePage(pageNum, contentHtml, isCover = false) {
     </div>
     <div class="page-footer">
       <span>${footerLeftText}</span>
-      <span>${pageNum}</span>
+      <span>${pageIndex}</span>
     </div>
   </div>`;
 }
@@ -486,27 +496,59 @@ htmlPages.push(makePage(24, `
   </table>
 `));
 
-// Page 25
+// Page 25: DFD Level 0
 htmlPages.push(makePage(25, `
-  <h2>DATAFLOW DIAGRAM OF SMART COMMUNITY SERVICES</h2>
+  <h2>DATA FLOW DIAGRAM (DFD) — LEVEL 0 (CONTEXT DIAGRAM)</h2>
+  <p>The Context Level DFD (Level 0) represents the high-level boundary of the Smart Community Service System, demonstrating data flows between external entities (User, Admin, Property Owner) and the central system engine.</p>
   
-  <h3>Level 0 Context DFD:</h3>
-  <div style="border: 1px dashed #475569; padding: 12px; border-radius: 6px; background: #f8fafc; font-family: monospace; font-size: 9pt;">
-    [ RESIDENT ] ---> (1.0 Auth & Credentials) ---> [ SYSTEM CORE ]<br>
-    [ RESIDENT ] ---> (2.0 Create Pass Request) ---> [ VISITOR ENGINE ] ---> D2: Passes<br>
-    [ GUARD ] ------> (3.0 Verify 6-Digit PIN) -> [ GATE CONSOLE ] ----> Alert Resident<br>
-    [ RESIDENT ] ---> (4.0 Trigger SOS Alert) --> [ SOCKET RADAR ] ----> Broadcast to Guards<br>
-    [ ADMIN ] ------> (5.0 Generate Invoices) -> [ ERP ENGINE ] ------> D4: Invoices
+  <div style="text-align: center; margin: 15px 0;">
+    <img src="${dfd0Base64}" alt="DFD Level 0 Context Diagram" style="max-width: 100%; max-height: 480px; border: 1px solid #cbd5e1; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" />
   </div>
 
-  <h3 style="margin-top: 15px;">Level 1 Detailed Process DFD:</h3>
-  <div style="border: 1px dashed #475569; padding: 12px; border-radius: 6px; background: #f8fafc; font-family: monospace; font-size: 9pt;">
-    1.0 AUTHENTICATION PROCESS: Inputs credentials -> Validates JWT & Bcrypt Hash -> Returns User Role.<br>
-    2.0 VISITOR SECURITY PROCESS: Generates 6-Digit PIN -> Guard verifies code -> Logs entry in D3: GateLogs.<br>
-    3.0 PARCEL LOGGING PROCESS: Guard inputs flat_id -> System generates 4-digit OTP -> Socket alert sent to flat.<br>
-    4.0 ERP BILLING PROCESS: Admin triggers batch job -> Calculates flat sqft charges -> Generates D4: Invoices.<br>
-    5.0 HELPDESK PROCESS: Resident submits ticket -> Assignee updates status -> System notifies Resident.
+  <p><strong>External Entity Interactions:</strong></p>
+  <ul class="arrow-list">
+    <li><strong>User:</strong> Sends Registration / Login Data, Service Requests / Bookings; receives Account Details, Notifications, Service Info & Reports.</li>
+    <li><strong>Admin:</strong> Manages Users / Services / Tickets, inputs Configuration Data; receives Reports / Analytics and User & Service Details.</li>
+    <li><strong>Property Owner:</strong> Exchanges Property Details / Booking Info and receives Booking Confirmations / Payment Status.</li>
+  </ul>
+`));
+
+// Page 26: DFD Level 1
+htmlPages.push(makePage(26, `
+  <h2>DATA FLOW DIAGRAM (DFD) — LEVEL 1 (SYSTEM PROCESSES)</h2>
+  <p>The Level 1 DFD decomposes the core system into primary process modules (User Management, Property Management, Booking Management, Payment Management, Helpdesk Management) and their respective data stores.</p>
+  
+  <div style="text-align: center; margin: 15px 0;">
+    <img src="${dfd1Base64}" alt="DFD Level 1 Diagram" style="max-width: 100%; max-height: 480px; border: 1px solid #cbd5e1; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" />
   </div>
+
+  <p><strong>Primary Processes & Data Stores:</strong></p>
+  <ul class="arrow-list">
+    <li><strong>1.1 User Management:</strong> Interacts with <em>D1 User</em> store for authentication, profile setup, and RBAC controls.</li>
+    <li><strong>1.2 Property Management:</strong> Manages property listings, unit metadata, and reads/writes to <em>D2 Property</em> store.</li>
+    <li><strong>1.3 Booking Management:</strong> Handles service/facility reservation requests and logs to <em>D3 Booking</em> store.</li>
+    <li><strong>1.4 Payment Management:</strong> Processes transactional financial settlements and updates <em>D3 Payment</em> store.</li>
+    <li><strong>1.5 Helpdesk Management:</strong> Routes resident complaint tickets to Admin and persists updates to <em>D5 Ticket</em> store.</li>
+  </ul>
+`));
+
+// Page 27: DFD Level 2
+htmlPages.push(makePage(27, `
+  <h2>DATA FLOW DIAGRAM (DFD) — LEVEL 2 (DETAILED KEY PROCESSES)</h2>
+  <p>The Level 2 DFD provides an exploded, granular view of specific subprocesses within each major functional module.</p>
+  
+  <div style="text-align: center; margin: 15px 0;">
+    <img src="${dfd2Base64}" alt="DFD Level 2 Detailed View" style="max-width: 100%; max-height: 480px; border: 1px solid #cbd5e1; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" />
+  </div>
+
+  <p><strong>Granular Subprocess Breakdown:</strong></p>
+  <ul class="arrow-list">
+    <li><strong>1.1 User Management:</strong> 1.1.1 Register / Login & 1.1.2 Update Profile.</li>
+    <li><strong>1.2 Property Management:</strong> 1.2.1 Add / Update Property & 1.2.2 Search / View Properties.</li>
+    <li><strong>1.3 Booking Management:</strong> 1.3.1 Check Availability & 1.3.2 Create / Manage Booking.</li>
+    <li><strong>1.4 Payment Management:</strong> 1.4.1 Process Payment & 1.4.2 Verify Transaction.</li>
+    <li><strong>1.5 Helpdesk Management:</strong> 1.5.1 Create Ticket & 1.5.2 Track / Resolve Ticket.</li>
+  </ul>
 `));
 
 // Page 26

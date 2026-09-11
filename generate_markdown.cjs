@@ -136,8 +136,15 @@ The main objective of this project is to build an integrated, full-stack enterpr
 5. **Staff Reviews (1:N):** Residents submit multiple 1-to-5 star \`StaffReview\` records per staff member.
 
 ### Data Flow Diagram (DFD) Structure
-- **Level 0 Context DFD:** Illustrates high-level system boundaries connecting Residents, Security Guards, and Admins to System Core, Visitor Engine, Socket Radar, Staff Ratings Engine, and ERP Engine.
-- **Level 1 Process DFD:** Details 1.0 Auth Process, 2.0 Multi-Society Infrastructure Process, 3.0 Visitor Security Process, 4.0 Staff Attendance & Ratings Process, 5.0 ERP Billing Process, and 6.0 Helpdesk Process.
+
+#### DFD Level 0 (Context Diagram)
+![DFD Level 0](dfd_level_0.png)
+
+#### DFD Level 1 (System Processes)
+![DFD Level 1](dfd_level_1.png)
+
+#### DFD Level 2 (Detailed Key Processes)
+![DFD Level 2](dfd_level_2.png)
 
 ---
 
