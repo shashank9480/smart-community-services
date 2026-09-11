@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ShieldCheck, Plus, Trash2, Mail, Phone, Building2, Search, ShieldAlert, KeyRound } from 'lucide-react';
+import { ShieldCheck, Plus, Trash2, Mail, Phone, Building2, Search, ShieldAlert, KeyRound, Edit2 } from 'lucide-react';
 import api from '../../services/api.js';
 import { Card } from '../../components/common/Card.js';
 import { Button } from '../../components/common/Button.js';
@@ -14,14 +14,15 @@ export const AdminGuardsPage: React.FC = () => {
   const [societies, setSocieties] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingGuard, setEditingGuard] = useState<any | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSocietyId, setSelectedSocietyId] = useState<string>('ALL');
 
-  // Form states for creating a Guard
+  // Form states for Guard
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [password, setPassword] = useState('guard123');
+  const [password, setPassword] = useState('');
   const [societyId, setSocietyId] = useState('');
 
   const [submitting, setSubmitting] = useState(false);
@@ -59,33 +60,62 @@ export const AdminGuardsPage: React.FC = () => {
     loadData();
   }, []);
 
-  const handleCreateGuard = async (e: React.FormEvent) => {
+  const openCreateModal = () => {
+    setEditingGuard(null);
+    setName('');
+    setEmail('');
+    setPhone('');
+    setPassword('guard123');
+    if (societies.length > 0) setSocietyId(societies[0].id);
+    setError(null);
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (guard: any) => {
+    setEditingGuard(guard);
+    setName(guard.name);
+    setEmail(guard.email);
+    setPhone(guard.phone);
+    setPassword('');
+    const currentSocId = guard.society_id || guard.society?.id || '';
+    setSocietyId(currentSocId || (societies.length > 0 ? societies[0].id : ''));
+    setError(null);
+    setIsModalOpen(true);
+  };
+
+  const handleSubmitGuard = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
 
     try {
-      const payload = {
+      const payload: any = {
         name,
         email,
         phone,
-        password,
         role: 'GUARD',
         society_id: societyId || null,
         flat_id: null,
       };
 
-      const res = await api.post('/foundation/users', payload);
-      if (res.data.success) {
-        setIsModalOpen(false);
-        setName('');
-        setEmail('');
-        setPhone('');
-        setPassword('guard123');
-        loadData();
+      if (password) payload.password = password;
+
+      if (editingGuard) {
+        const res = await api.put(`/foundation/users/${editingGuard.id}`, payload);
+        if (res.data.success) {
+          setIsModalOpen(false);
+          loadData();
+        }
+      } else {
+        if (!password) payload.password = 'guard123';
+        const res = await api.post('/foundation/users', payload);
+        if (res.data.success) {
+          setIsModalOpen(false);
+          loadData();
+        }
       }
     } catch (err: any) {
-      setError(err.response?.data?.error?.message || 'Failed to create security guard account');
+      setError(err.response?.data?.error?.message || 'Failed to save security guard account');
     } finally {
       setSubmitting(false);
     }
@@ -129,7 +159,7 @@ export const AdminGuardsPage: React.FC = () => {
           </div>
         </div>
 
-        <Button variant="primary" icon={<Plus className="w-4 h-4" />} onClick={() => setIsModalOpen(true)}>
+        <Button variant="primary" icon={<Plus className="w-4 h-4" />} onClick={openCreateModal}>
           Add Security Guard
         </Button>
       </MotionItem>
@@ -224,7 +254,7 @@ export const AdminGuardsPage: React.FC = () => {
                     <th className="py-3.5 px-6">Contact Info</th>
                     <th className="py-3.5 px-6">Assigned Society Base</th>
                     <th className="py-3.5 px-6">Gate Duty Status</th>
-                    <th className="py-3.5 px-6 text-right">Revoke Access</th>
+                    <th className="py-3.5 px-6 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200/70 bg-white">
@@ -263,13 +293,22 @@ export const AdminGuardsPage: React.FC = () => {
                         <Badge variant="warning">Gate Console Active</Badge>
                       </td>
                       <td className="py-3.5 px-6 text-right">
-                        <button
-                          onClick={() => handleDeleteGuard(guard.id, guard.name)}
-                          className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Revoke & Delete Guard"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => openEditModal(guard)}
+                            className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
+                            title="Edit Guard Details"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteGuard(guard.id, guard.name)}
+                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Revoke & Delete Guard"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -280,9 +319,9 @@ export const AdminGuardsPage: React.FC = () => {
         )}
       </MotionItem>
 
-      {/* Add Guard Modal */}
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Add Security Guard Account">
-        <form onSubmit={handleCreateGuard} className="space-y-4">
+      {/* Add / Edit Guard Modal */}
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingGuard ? "Edit Security Guard Details" : "Add Security Guard Account"}>
+        <form onSubmit={handleSubmitGuard} className="space-y-4">
           {error && <p className="text-xs text-red-600 font-medium bg-red-50 p-3 rounded-lg">{error}</p>}
           <Input
             label="Guard Full Name"
@@ -312,7 +351,7 @@ export const AdminGuardsPage: React.FC = () => {
           
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Target Society</label>
+              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Target Society Base</label>
               <select
                 className="form-input text-xs"
                 value={societyId}
@@ -325,11 +364,12 @@ export const AdminGuardsPage: React.FC = () => {
               </select>
             </div>
             <Input
-              label="Set Login Password"
+              label={editingGuard ? "New Password (Optional)" : "Set Login Password"}
               type="text"
+              placeholder={editingGuard ? "••••••••" : "guard123"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              required
+              required={!editingGuard}
             />
           </div>
 
@@ -338,7 +378,7 @@ export const AdminGuardsPage: React.FC = () => {
               Cancel
             </Button>
             <Button type="submit" variant="primary" isLoading={submitting}>
-              Add Security Guard
+              {editingGuard ? "Save Changes" : "Add Security Guard"}
             </Button>
           </div>
         </form>
@@ -346,3 +386,4 @@ export const AdminGuardsPage: React.FC = () => {
     </PageMotion>
   );
 };
+

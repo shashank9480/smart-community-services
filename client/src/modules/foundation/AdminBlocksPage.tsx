@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Home, Plus, Building2 } from 'lucide-react';
+import { Home, Plus, Building2, Edit2, Trash2 } from 'lucide-react';
 import api from '../../services/api.js';
 import { Card } from '../../components/common/Card.js';
 import { Button } from '../../components/common/Button.js';
@@ -11,6 +11,7 @@ export const AdminBlocksPage: React.FC = () => {
   const [societies, setSocieties] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingBlock, setEditingBlock] = useState<any | null>(null);
   const [societyId, setSocietyId] = useState('');
   const [name, setName] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -40,7 +41,23 @@ export const AdminBlocksPage: React.FC = () => {
     loadData();
   }, []);
 
-  const handleCreate = async (e: React.FormEvent) => {
+  const openCreateModal = () => {
+    setEditingBlock(null);
+    setName('');
+    if (societies.length > 0) setSocietyId(societies[0].id);
+    setError(null);
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (blk: any) => {
+    setEditingBlock(blk);
+    setName(blk.name);
+    setSocietyId(blk.society_id);
+    setError(null);
+    setIsModalOpen(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!societyId) {
       setError('Please select a society first');
@@ -50,16 +67,35 @@ export const AdminBlocksPage: React.FC = () => {
     setError(null);
 
     try {
-      const res = await api.post('/foundation/blocks', { society_id: societyId, name });
-      if (res.data.success) {
-        setIsModalOpen(false);
-        setName('');
-        loadData();
+      if (editingBlock) {
+        const res = await api.put(`/foundation/blocks/${editingBlock.id}`, { society_id: societyId, name });
+        if (res.data.success) {
+          setIsModalOpen(false);
+          loadData();
+        }
+      } else {
+        const res = await api.post('/foundation/blocks', { society_id: societyId, name });
+        if (res.data.success) {
+          setIsModalOpen(false);
+          loadData();
+        }
       }
     } catch (err: any) {
-      setError(err.response?.data?.error?.message || 'Failed to create block');
+      setError(err.response?.data?.error?.message || 'Failed to save block');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (blk: any) => {
+    if (!window.confirm(`Are you sure you want to delete "${blk.name}"? This action cannot be undone.`)) {
+      return;
+    }
+    try {
+      await api.delete(`/foundation/blocks/${blk.id}`);
+      loadData();
+    } catch (err: any) {
+      alert(err.response?.data?.error?.message || 'Failed to delete block');
     }
   };
 
@@ -70,7 +106,7 @@ export const AdminBlocksPage: React.FC = () => {
           <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Blocks Management</h2>
           <p className="text-sm text-slate-500 mt-0.5">Define physical wings and blocks within societies.</p>
         </div>
-        <Button variant="primary" icon={<Plus className="w-4 h-4" />} onClick={() => setIsModalOpen(true)}>
+        <Button variant="primary" icon={<Plus className="w-4 h-4" />} onClick={openCreateModal}>
           Add New Block
         </Button>
       </div>
@@ -87,15 +123,33 @@ export const AdminBlocksPage: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
           {blocks.map((blk) => (
             <Card key={blk.id} className="hover:border-emerald-500/40 transition-colors">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center font-bold">
-                  <Home className="w-5 h-5 text-emerald-600" />
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center font-bold">
+                    <Home className="w-5 h-5 text-emerald-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-base text-slate-900">{blk.name}</h4>
+                    <p className="text-xs text-slate-500 flex items-center gap-1">
+                      <Building2 className="w-3.5 h-3.5" /> {blk.society?.name}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="font-bold text-base text-slate-900">{blk.name}</h4>
-                  <p className="text-xs text-slate-500 flex items-center gap-1">
-                    <Building2 className="w-3.5 h-3.5" /> {blk.society?.name}
-                  </p>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => openEditModal(blk)}
+                    className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                    title="Edit Block"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(blk)}
+                    className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    title="Delete Block"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
               <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between font-mono text-xs text-slate-600">
@@ -109,9 +163,9 @@ export const AdminBlocksPage: React.FC = () => {
         </div>
       )}
 
-      {/* Create Modal */}
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Add New Block / Wing">
-        <form onSubmit={handleCreate} className="space-y-4">
+      {/* Create / Edit Modal */}
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingBlock ? "Edit Block Details" : "Add New Block / Wing"}>
+        <form onSubmit={handleSubmit} className="space-y-4">
           {error && <p className="text-xs text-red-600 font-medium bg-red-50 p-3 rounded-lg">{error}</p>}
           <div>
             <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Select Society</label>
@@ -139,7 +193,7 @@ export const AdminBlocksPage: React.FC = () => {
               Cancel
             </Button>
             <Button type="submit" variant="primary" isLoading={submitting}>
-              Create Block
+              {editingBlock ? "Save Changes" : "Create Block"}
             </Button>
           </div>
         </form>
@@ -147,3 +201,4 @@ export const AdminBlocksPage: React.FC = () => {
     </div>
   );
 };
+

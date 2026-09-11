@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Building2, Plus, MapPin, CheckCircle2 } from 'lucide-react';
+import { Building2, Plus, MapPin, Edit2, Trash2 } from 'lucide-react';
 import api from '../../services/api.js';
 import { Card } from '../../components/common/Card.js';
 import { Button } from '../../components/common/Button.js';
@@ -10,6 +10,7 @@ export const AdminSocietiesPage: React.FC = () => {
   const [societies, setSocieties] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingSociety, setEditingSociety] = useState<any | null>(null);
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -32,23 +33,57 @@ export const AdminSocietiesPage: React.FC = () => {
     loadSocieties();
   }, []);
 
-  const handleCreate = async (e: React.FormEvent) => {
+  const openCreateModal = () => {
+    setEditingSociety(null);
+    setName('');
+    setAddress('');
+    setError(null);
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (soc: any) => {
+    setEditingSociety(soc);
+    setName(soc.name);
+    setAddress(soc.address);
+    setError(null);
+    setIsModalOpen(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
 
     try {
-      const res = await api.post('/foundation/societies', { name, address });
-      if (res.data.success) {
-        setIsModalOpen(false);
-        setName('');
-        setAddress('');
-        loadSocieties();
+      if (editingSociety) {
+        const res = await api.put(`/foundation/societies/${editingSociety.id}`, { name, address });
+        if (res.data.success) {
+          setIsModalOpen(false);
+          loadSocieties();
+        }
+      } else {
+        const res = await api.post('/foundation/societies', { name, address });
+        if (res.data.success) {
+          setIsModalOpen(false);
+          loadSocieties();
+        }
       }
     } catch (err: any) {
-      setError(err.response?.data?.error?.message || 'Failed to create society');
+      setError(err.response?.data?.error?.message || 'Failed to save society');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (soc: any) => {
+    if (!window.confirm(`Are you sure you want to delete "${soc.name}"? This action cannot be undone.`)) {
+      return;
+    }
+    try {
+      await api.delete(`/foundation/societies/${soc.id}`);
+      loadSocieties();
+    } catch (err: any) {
+      alert(err.response?.data?.error?.message || 'Failed to delete society');
     }
   };
 
@@ -59,7 +94,7 @@ export const AdminSocietiesPage: React.FC = () => {
           <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Society Master Registry</h2>
           <p className="text-sm text-slate-500 mt-0.5">Manage registered residential communities and physical addresses.</p>
         </div>
-        <Button variant="primary" icon={<Plus className="w-4 h-4" />} onClick={() => setIsModalOpen(true)}>
+        <Button variant="primary" icon={<Plus className="w-4 h-4" />} onClick={openCreateModal}>
           Add New Society
         </Button>
       </div>
@@ -88,9 +123,22 @@ export const AdminSocietiesPage: React.FC = () => {
                     </p>
                   </div>
                 </div>
-                <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
-                  Active Estate
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => openEditModal(soc)}
+                    className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                    title="Edit Society"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(soc)}
+                    className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    title="Delete Society"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
 
               <div className="mt-6 pt-4 border-t border-slate-100 grid grid-cols-2 gap-4 text-center font-mono text-xs">
@@ -108,9 +156,9 @@ export const AdminSocietiesPage: React.FC = () => {
         </div>
       )}
 
-      {/* Create Modal */}
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Register New Society">
-        <form onSubmit={handleCreate} className="space-y-4">
+      {/* Create / Edit Modal */}
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingSociety ? "Edit Society Details" : "Register New Society"}>
+        <form onSubmit={handleSubmit} className="space-y-4">
           {error && <p className="text-xs text-red-600 font-medium bg-red-50 p-3 rounded-lg">{error}</p>}
           <Input
             label="Society Name"
@@ -131,7 +179,7 @@ export const AdminSocietiesPage: React.FC = () => {
               Cancel
             </Button>
             <Button type="submit" variant="primary" isLoading={submitting}>
-              Create Society
+              {editingSociety ? "Save Changes" : "Create Society"}
             </Button>
           </div>
         </form>
@@ -139,3 +187,4 @@ export const AdminSocietiesPage: React.FC = () => {
     </div>
   );
 };
+

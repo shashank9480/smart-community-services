@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Users, Plus, Trash2, Mail, Phone, Home, Search, Building2 } from 'lucide-react';
+import { Users, Plus, Trash2, Mail, Phone, Home, Search, Building2, Edit2 } from 'lucide-react';
 import api from '../../services/api.js';
 import { Card } from '../../components/common/Card.js';
 import { Button } from '../../components/common/Button.js';
@@ -15,6 +15,7 @@ export const AdminResidentsPage: React.FC = () => {
   const [societies, setSocieties] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingResident, setEditingResident] = useState<any | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSocietyId, setSelectedSocietyId] = useState<string>('ALL');
 
@@ -22,7 +23,7 @@ export const AdminResidentsPage: React.FC = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [password, setPassword] = useState('resident123');
+  const [password, setPassword] = useState('');
   const [flatId, setFlatId] = useState('');
   const [societyId, setSocietyId] = useState('');
 
@@ -63,34 +64,66 @@ export const AdminResidentsPage: React.FC = () => {
     loadData();
   }, []);
 
-  const handleCreateResident = async (e: React.FormEvent) => {
+  const openCreateModal = () => {
+    setEditingResident(null);
+    setName('');
+    setEmail('');
+    setPhone('');
+    setPassword('resident123');
+    setFlatId('');
+    if (societies.length > 0) setSocietyId(societies[0].id);
+    setError(null);
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (res: any) => {
+    setEditingResident(res);
+    setName(res.name);
+    setEmail(res.email);
+    setPhone(res.phone);
+    setPassword('');
+    setFlatId(res.flat_id || res.flat?.id || '');
+    const currentSocId = res.society_id || res.society?.id || res.flat?.block?.society_id || res.flat?.block?.society?.id || '';
+    setSocietyId(currentSocId || (societies.length > 0 ? societies[0].id : ''));
+    setError(null);
+    setIsModalOpen(true);
+  };
+
+  const handleSubmitResident = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
 
     try {
-      const payload = {
+      const payload: any = {
         name,
         email,
         phone,
-        password,
         role: 'RESIDENT',
         society_id: societyId || null,
         flat_id: flatId || null,
       };
 
-      const res = await api.post('/foundation/users', payload);
-      if (res.data.success) {
-        setIsModalOpen(false);
-        setName('');
-        setEmail('');
-        setPhone('');
-        setPassword('resident123');
-        setFlatId('');
-        loadData();
+      if (password) {
+        payload.password = password;
+      }
+
+      if (editingResident) {
+        const res = await api.put(`/foundation/users/${editingResident.id}`, payload);
+        if (res.data.success) {
+          setIsModalOpen(false);
+          loadData();
+        }
+      } else {
+        if (!password) payload.password = 'resident123';
+        const res = await api.post('/foundation/users', payload);
+        if (res.data.success) {
+          setIsModalOpen(false);
+          loadData();
+        }
       }
     } catch (err: any) {
-      setError(err.response?.data?.error?.message || 'Failed to create resident account');
+      setError(err.response?.data?.error?.message || 'Failed to save resident account');
     } finally {
       setSubmitting(false);
     }
@@ -139,7 +172,7 @@ export const AdminResidentsPage: React.FC = () => {
           </div>
         </div>
 
-        <Button variant="primary" icon={<Plus className="w-4 h-4" />} onClick={() => setIsModalOpen(true)}>
+        <Button variant="primary" icon={<Plus className="w-4 h-4" />} onClick={openCreateModal}>
           Add New Resident
         </Button>
       </MotionItem>
@@ -278,13 +311,22 @@ export const AdminResidentsPage: React.FC = () => {
                         <Badge variant="success">RESIDENT</Badge>
                       </td>
                       <td className="py-3.5 px-6 text-right">
-                        <button
-                          onClick={() => handleDelete(res.id, res.name)}
-                          className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Delete Resident"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => openEditModal(res)}
+                            className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                            title="Edit Resident"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(res.id, res.name)}
+                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Delete Resident"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -295,9 +337,9 @@ export const AdminResidentsPage: React.FC = () => {
         )}
       </MotionItem>
 
-      {/* Add Resident Modal */}
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Invite & Create Resident Account">
-        <form onSubmit={handleCreateResident} className="space-y-4">
+      {/* Add / Edit Resident Modal */}
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingResident ? "Edit Resident Details" : "Invite & Create Resident Account"}>
+        <form onSubmit={handleSubmitResident} className="space-y-4">
           {error && <p className="text-xs text-red-600 font-medium bg-red-50 p-3 rounded-lg">{error}</p>}
           <Input
             label="Resident Full Name"
@@ -360,11 +402,12 @@ export const AdminResidentsPage: React.FC = () => {
           </div>
 
           <Input
-            label="Initial Password"
+            label={editingResident ? "New Password (Leave blank to keep unchanged)" : "Initial Password"}
             type="text"
+            placeholder={editingResident ? "••••••••" : "resident123"}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            required
+            required={!editingResident}
           />
 
           <div className="flex justify-end gap-3 pt-4 border-t border-slate-200">
@@ -372,7 +415,7 @@ export const AdminResidentsPage: React.FC = () => {
               Cancel
             </Button>
             <Button type="submit" variant="primary" isLoading={submitting}>
-              Invite Resident
+              {editingResident ? "Save Changes" : "Invite Resident"}
             </Button>
           </div>
         </form>
@@ -380,3 +423,4 @@ export const AdminResidentsPage: React.FC = () => {
     </PageMotion>
   );
 };
+

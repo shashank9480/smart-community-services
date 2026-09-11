@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Building2, Plus, UserCheck, Home } from 'lucide-react';
+import { Building2, Plus, UserCheck, Edit2, Trash2 } from 'lucide-react';
 import api from '../../services/api.js';
 import { Card } from '../../components/common/Card.js';
 import { Button } from '../../components/common/Button.js';
@@ -12,6 +12,7 @@ export const AdminFlatsPage: React.FC = () => {
   const [blocks, setBlocks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingFlat, setEditingFlat] = useState<any | null>(null);
 
   const [blockId, setBlockId] = useState('');
   const [number, setNumber] = useState('');
@@ -44,7 +45,27 @@ export const AdminFlatsPage: React.FC = () => {
     loadData();
   }, []);
 
-  const handleCreate = async (e: React.FormEvent) => {
+  const openCreateModal = () => {
+    setEditingFlat(null);
+    setNumber('');
+    setBhkType('2BHK');
+    setSqft('1200');
+    if (blocks.length > 0) setBlockId(blocks[0].id);
+    setError(null);
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (flt: any) => {
+    setEditingFlat(flt);
+    setNumber(flt.number);
+    setBlockId(flt.block_id);
+    setBhkType(flt.bhk_type);
+    setSqft(String(flt.sqft));
+    setError(null);
+    setIsModalOpen(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!blockId) {
       setError('Please select a block first');
@@ -54,21 +75,42 @@ export const AdminFlatsPage: React.FC = () => {
     setError(null);
 
     try {
-      const res = await api.post('/foundation/flats', {
+      const payload = {
         block_id: blockId,
         number,
         bhk_type: bhkType,
         sqft: parseFloat(sqft) || 1200,
-      });
-      if (res.data.success) {
-        setIsModalOpen(false);
-        setNumber('');
-        loadData();
+      };
+
+      if (editingFlat) {
+        const res = await api.put(`/foundation/flats/${editingFlat.id}`, payload);
+        if (res.data.success) {
+          setIsModalOpen(false);
+          loadData();
+        }
+      } else {
+        const res = await api.post('/foundation/flats', payload);
+        if (res.data.success) {
+          setIsModalOpen(false);
+          loadData();
+        }
       }
     } catch (err: any) {
-      setError(err.response?.data?.error?.message || 'Failed to create flat');
+      setError(err.response?.data?.error?.message || 'Failed to save flat');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (flt: any) => {
+    if (!window.confirm(`Are you sure you want to delete Flat "${flt.number}"? This action cannot be undone.`)) {
+      return;
+    }
+    try {
+      await api.delete(`/foundation/flats/${flt.id}`);
+      loadData();
+    } catch (err: any) {
+      alert(err.response?.data?.error?.message || 'Failed to delete flat');
     }
   };
 
@@ -79,7 +121,7 @@ export const AdminFlatsPage: React.FC = () => {
           <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Flats Registry</h2>
           <p className="text-sm text-slate-500 mt-0.5">Physical units, square footage, and owner assignments.</p>
         </div>
-        <Button variant="primary" icon={<Plus className="w-4 h-4" />} onClick={() => setIsModalOpen(true)}>
+        <Button variant="primary" icon={<Plus className="w-4 h-4" />} onClick={openCreateModal}>
           Add New Flat
         </Button>
       </div>
@@ -106,7 +148,23 @@ export const AdminFlatsPage: React.FC = () => {
                     <span className="text-[11px] text-slate-400 block">{flt.block?.society?.name}</span>
                   </div>
                 </div>
-                <Badge variant={flt.bhk_type === '3BHK' ? 'info' : 'neutral'}>{flt.bhk_type}</Badge>
+                <div className="flex items-center gap-1.5">
+                  <Badge variant={flt.bhk_type === '3BHK' ? 'info' : 'neutral'}>{flt.bhk_type}</Badge>
+                  <button
+                    onClick={() => openEditModal(flt)}
+                    className="p-1 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded transition-colors"
+                    title="Edit Flat"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(flt)}
+                    className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                    title="Delete Flat"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-2 my-3 font-mono text-xs text-slate-600 bg-slate-50 p-2.5 rounded-lg">
@@ -136,9 +194,9 @@ export const AdminFlatsPage: React.FC = () => {
         </div>
       )}
 
-      {/* Create Modal */}
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Add New Flat Unit">
-        <form onSubmit={handleCreate} className="space-y-4">
+      {/* Create / Edit Modal */}
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingFlat ? "Edit Flat Details" : "Add New Flat Unit"}>
+        <form onSubmit={handleSubmit} className="space-y-4">
           {error && <p className="text-xs text-red-600 font-medium bg-red-50 p-3 rounded-lg">{error}</p>}
           <div>
             <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Target Block / Wing</label>
@@ -189,7 +247,7 @@ export const AdminFlatsPage: React.FC = () => {
               Cancel
             </Button>
             <Button type="submit" variant="primary" isLoading={submitting}>
-              Create Flat
+              {editingFlat ? "Save Changes" : "Create Flat"}
             </Button>
           </div>
         </form>
@@ -197,3 +255,4 @@ export const AdminFlatsPage: React.FC = () => {
     </div>
   );
 };
+

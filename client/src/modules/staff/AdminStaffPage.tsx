@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { UserCheck, Plus, Star, Phone, Home, Building2, Search, Filter, MessageSquare, ShieldCheck } from 'lucide-react';
+import { UserCheck, Plus, Star, Phone, Home, Building2, Search, Filter, MessageSquare, Edit2, Trash2, X } from 'lucide-react';
 import api from '../../services/api.js';
 import { Card } from '../../components/common/Card.js';
 import { Button } from '../../components/common/Button.js';
@@ -22,10 +22,11 @@ export const AdminStaffPage: React.FC = () => {
 
   // Modals
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [editingStaff, setEditingStaff] = useState<any | null>(null);
   const [isAssignOpen, setIsAssignOpen] = useState(false);
   const [activeReviewsStaff, setActiveReviewsStaff] = useState<any | null>(null);
 
-  // Form state - Create
+  // Form state - Create / Edit Staff
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [category, setCategory] = useState('Maid');
@@ -75,18 +76,64 @@ export const AdminStaffPage: React.FC = () => {
     loadData();
   }, []);
 
-  const handleCreate = async (e: React.FormEvent) => {
+  const openCreateModal = () => {
+    setEditingStaff(null);
+    setName('');
+    setPhone('');
+    setCategory('Maid');
+    setIsCreateOpen(true);
+  };
+
+  const openEditModal = (st: any) => {
+    setEditingStaff(st);
+    setName(st.name);
+    setPhone(st.phone);
+    setCategory(st.category);
+    setIsCreateOpen(true);
+  };
+
+  const handleSaveStaff = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await api.post('/staff', { name, phone, category });
-      if (res.data.success) {
-        setIsCreateOpen(false);
-        setName('');
-        setPhone('');
-        loadData();
+      if (editingStaff) {
+        const res = await api.put(`/staff/${editingStaff.id}`, { name, phone, category });
+        if (res.data.success) {
+          setIsCreateOpen(false);
+          loadData();
+        }
+      } else {
+        const res = await api.post('/staff', { name, phone, category });
+        if (res.data.success) {
+          setIsCreateOpen(false);
+          setName('');
+          setPhone('');
+          loadData();
+        }
       }
     } catch (err: any) {
-      alert(err.response?.data?.error?.message || 'Failed to create staff member');
+      alert(err.response?.data?.error?.message || 'Failed to save staff member');
+    }
+  };
+
+  const handleDeleteStaff = async (st: any) => {
+    if (!window.confirm(`Are you sure you want to delete staff member "${st.name}"? This will remove all their reviews and flat assignments.`)) {
+      return;
+    }
+    try {
+      await api.delete(`/staff/${st.id}`);
+      loadData();
+    } catch (err: any) {
+      alert(err.response?.data?.error?.message || 'Failed to delete staff member');
+    }
+  };
+
+  const handleRemoveAssignment = async (assignmentId: string) => {
+    if (!window.confirm('Remove this flat assignment?')) return;
+    try {
+      await api.delete(`/staff/assign/${assignmentId}`);
+      loadData();
+    } catch (err: any) {
+      alert('Failed to remove flat assignment');
     }
   };
 
@@ -188,7 +235,7 @@ export const AdminStaffPage: React.FC = () => {
           <Button variant="secondary" icon={<Home className="w-4 h-4" />} onClick={() => setIsAssignOpen(true)}>
             Assign Staff to Flat
           </Button>
-          <Button variant="primary" icon={<Plus className="w-4 h-4" />} onClick={() => setIsCreateOpen(true)}>
+          <Button variant="primary" icon={<Plus className="w-4 h-4" />} onClick={openCreateModal}>
             Add New Staff Member
           </Button>
         </div>
@@ -325,28 +372,33 @@ export const AdminStaffPage: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="flex flex-col items-end">
-                      <div className="flex items-center gap-1 text-amber-600 font-bold text-sm bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">
-                        <Star className="w-4 h-4 fill-amber-400 text-amber-500" />
-                        {s.avg_rating}
-                      </div>
-                      <span className="text-[10px] text-slate-400 font-mono mt-0.5">
-                        {s.reviews?.length || 0} reviews
-                      </span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => openEditModal(s)}
+                        className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                        title="Edit Staff Member"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteStaff(s)}
+                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Delete Staff Member"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
 
-                  {/* Contact Info */}
+                  {/* Rating Badge & Phone */}
                   <div className="flex items-center justify-between text-xs text-slate-600 bg-slate-50 p-2.5 rounded-lg border border-slate-100 font-mono">
-                    <span className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1 text-amber-600 font-bold text-xs">
+                      <Star className="w-4 h-4 fill-amber-400 text-amber-500" />
+                      {s.avg_rating} <span className="text-slate-400 font-normal">({s.reviews?.length || 0})</span>
+                    </div>
+                    <span className="flex items-center gap-1.5 font-semibold text-slate-700">
                       <Phone className="w-3.5 h-3.5 text-slate-400" /> {s.phone}
                     </span>
-                    <a
-                      href={`tel:${s.phone}`}
-                      className="text-blue-600 font-semibold hover:underline"
-                    >
-                      Call Staff
-                    </a>
                   </div>
 
                   {/* Assigned Flats */}
@@ -361,10 +413,17 @@ export const AdminStaffPage: React.FC = () => {
                         {s.assignments.map((a: any) => (
                           <span
                             key={a.id}
-                            className="px-2 py-1 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold flex items-center gap-1"
+                            className="px-2 py-1 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold flex items-center gap-1 text-[11px]"
                           >
                             <Home className="w-3 h-3 text-emerald-600" />
                             Flat {a.flat?.number} ({a.flat?.block?.name})
+                            <button
+                              onClick={() => handleRemoveAssignment(a.id)}
+                              className="ml-1 text-slate-400 hover:text-red-600 hover:bg-red-100 rounded p-0.5"
+                              title="Unassign Flat"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
                           </span>
                         ))}
                       </div>
@@ -389,9 +448,9 @@ export const AdminStaffPage: React.FC = () => {
         )}
       </MotionItem>
 
-      {/* Modal - Register Staff */}
-      <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Register New Domestic Staff Member">
-        <form onSubmit={handleCreate} className="space-y-4">
+      {/* Modal - Register / Edit Staff */}
+      <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title={editingStaff ? "Edit Domestic Staff Details" : "Register New Domestic Staff Member"}>
+        <form onSubmit={handleSaveStaff} className="space-y-4">
           <Input label="Full Name" placeholder="e.g. Radha Devi" value={name} onChange={(e) => setName(e.target.value)} required />
           <Input label="Phone Number" type="tel" placeholder="e.g. 9876543210" value={phone} onChange={(e) => setPhone(e.target.value)} required />
           <div>
@@ -406,7 +465,7 @@ export const AdminStaffPage: React.FC = () => {
           </div>
           <div className="flex justify-end gap-3 pt-4 border-t border-slate-200">
             <Button type="button" variant="secondary" onClick={() => setIsCreateOpen(false)}>Cancel</Button>
-            <Button type="submit" variant="primary">Create Staff Account</Button>
+            <Button type="submit" variant="primary">{editingStaff ? "Save Changes" : "Create Staff Account"}</Button>
           </div>
         </form>
       </Modal>
@@ -519,3 +578,4 @@ export const AdminStaffPage: React.FC = () => {
     </PageMotion>
   );
 };
+

@@ -46,6 +46,30 @@ export async function createSociety(req: AuthRequest, res: Response, next: NextF
   }
 }
 
+export async function updateSociety(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const id = String(req.params.id);
+    const data = societySchema.partial().parse(req.body);
+    const society = await prisma.society.update({
+      where: { id },
+      data,
+    });
+    return sendSuccess(res, society);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function deleteSociety(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const id = String(req.params.id);
+    await prisma.society.delete({ where: { id } });
+    return sendSuccess(res, { message: 'Society deleted successfully' });
+  } catch (error) {
+    next(error);
+  }
+}
+
 // =======================
 // Block CRUD
 // =======================
@@ -79,6 +103,31 @@ export async function createBlock(req: AuthRequest, res: Response, next: NextFun
     const data = blockSchema.parse(req.body);
     const block = await prisma.block.create({ data });
     return sendSuccess(res, block, 201);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function updateBlock(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const id = String(req.params.id);
+    const data = blockSchema.partial().parse(req.body);
+    const block = await prisma.block.update({
+      where: { id },
+      data,
+      include: { society: true },
+    });
+    return sendSuccess(res, block);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function deleteBlock(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const id = String(req.params.id);
+    await prisma.block.delete({ where: { id } });
+    return sendSuccess(res, { message: 'Block deleted successfully' });
   } catch (error) {
     next(error);
   }
@@ -128,6 +177,34 @@ export async function createFlat(req: AuthRequest, res: Response, next: NextFunc
     const data = flatSchema.parse(req.body);
     const flat = await prisma.flat.create({ data });
     return sendSuccess(res, flat, 201);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function updateFlat(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const id = String(req.params.id);
+    const data = flatSchema.partial().parse(req.body);
+    const flat = await prisma.flat.update({
+      where: { id },
+      data,
+      include: {
+        block: { include: { society: true } },
+        owner: { select: { id: true, name: true, email: true, phone: true } },
+      },
+    });
+    return sendSuccess(res, flat);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function deleteFlat(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const id = String(req.params.id);
+    await prisma.flat.delete({ where: { id } });
+    return sendSuccess(res, { message: 'Flat deleted successfully' });
   } catch (error) {
     next(error);
   }
@@ -227,6 +304,56 @@ export async function createUser(req: AuthRequest, res: Response, next: NextFunc
     }
 
     return sendSuccess(res, user, 201);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function updateUser(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const id = String(req.params.id);
+    const { password, ...bodyData } = req.body;
+
+    const updateData: any = {};
+    if (bodyData.name !== undefined) updateData.name = bodyData.name;
+    if (bodyData.email !== undefined) updateData.email = bodyData.email;
+    if (bodyData.phone !== undefined) updateData.phone = bodyData.phone;
+    if (bodyData.role !== undefined) updateData.role = bodyData.role;
+    if (bodyData.society_id !== undefined) updateData.society_id = bodyData.society_id || null;
+    if (bodyData.flat_id !== undefined) updateData.flat_id = bodyData.flat_id || null;
+    
+    if (password) {
+      updateData.password_hash = await bcrypt.hash(password, 10);
+    }
+
+    const user = await prisma.user.update({
+      where: { id },
+      data: updateData,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        flat_id: true,
+        society_id: true,
+        flat: { include: { block: { include: { society: true } } } },
+        society: true,
+      },
+    });
+
+    // If resident flat updated, also set flat owner if unassigned
+    if (user.flat_id && user.role === Role.RESIDENT) {
+      const flat = await prisma.flat.findUnique({ where: { id: user.flat_id } });
+      if (flat && !flat.owner_id) {
+        await prisma.flat.update({
+          where: { id: user.flat_id },
+          data: { owner_id: user.id },
+        });
+      }
+    }
+
+    return sendSuccess(res, user);
   } catch (error) {
     next(error);
   }

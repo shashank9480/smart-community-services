@@ -182,3 +182,37 @@ export async function reviewStaff(req: AuthRequest, res: Response, next: NextFun
     next(error);
   }
 }
+
+export async function updateStaff(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const id = String(req.params.id);
+    const data = createStaffSchema.partial().parse(req.body);
+    const staff = await prisma.staff.update({
+      where: { id },
+      data,
+    });
+    return sendSuccess(res, staff);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function deleteStaff(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const id = String(req.params.id);
+    await prisma.staff.delete({ where: { id } });
+    return sendSuccess(res, { message: 'Domestic staff deleted successfully' });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function deleteAssignment(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const id = String(req.params.id);
+    await prisma.staffAssignment.delete({ where: { id } });
+    return sendSuccess(res, { message: 'Staff assignment deleted successfully' });
+  } catch (error) {
+    next(error);
+  }
+}
