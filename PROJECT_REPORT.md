@@ -122,6 +122,9 @@ The main objective of this project is to build an integrated, full-stack enterpr
 
 ## 📐 SECTION 6: SYSTEM DESIGN
 
+### ER Diagram
+![ER Diagram](er_diagram.png)
+
 ### ER Diagram Concepts & Relationship Types
 1. **One-to-One (1:1):** Each flat has one assigned owner user account.
 2. **One-to-Many (1:N):** One society contains multiple blocks; one block contains multiple flats.

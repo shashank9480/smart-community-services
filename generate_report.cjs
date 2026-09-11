@@ -1,6 +1,11 @@
 const fs = require('fs');
 const path = require('path');
 
+const erDiagramPath = path.join(__dirname, 'er_diagram.png');
+const erDiagramBase64 = fs.existsSync(erDiagramPath) 
+  ? `data:image/png;base64,${fs.readFileSync(erDiagramPath).toString('base64')}`
+  : '';
+
 const headerText = "SMART COMMUNITY SERVICES";
 const footerLeftText = "MCA 4TH SEM || CIMS";
 
@@ -435,24 +440,11 @@ htmlPages.push(makePage(22, `
 htmlPages.push(makePage(23, `
   <h2>ER DIAGRAM FOR SMART COMMUNITY SERVICES</h2>
   
-  <div style="border: 2px solid #334155; padding: 15px; border-radius: 8px; background: #f8fafc; font-family: monospace; font-size: 9.5pt; line-height: 1.4;">
-    [USER] 1 ------ N [VISITOR_PASS] (FK: created_by)<br>
-    &nbsp;&nbsp;&nbsp;| 1<br>
-    &nbsp;&nbsp;&nbsp;|----------- N [GATE_LOG] (FK: guard_id)<br>
-    &nbsp;&nbsp;&nbsp;|----------- N [PARCEL] (FK: guard_id)<br>
-    &nbsp;&nbsp;&nbsp;|----------- N [TICKET] (FK: raised_by)<br>
-    &nbsp;&nbsp;&nbsp;| 1<br>
-    [SOCIETY] 1 --- N [BLOCK] 1 --- N [FLAT]<br>
-    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| 1<br>
-    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|----------- N [INVOICE] 1 --- N [PAYMENT]<br>
-    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|----------- N [PARCEL]<br>
-    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|----------- N [SOS_ALERT]<br>
-    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|----------- N [BOOKING] N --- 1 [FACILITY]<br>
-    [STAFF] 1 --- N [STAFF_ASSIGNMENT] N --- 1 [FLAT]<br>
-    [STAFF] 1 --- N [STAFF_ATTENDANCE]
+  <div style="text-align: center; margin: 15px 0;">
+    <img src="${erDiagramBase64}" alt="ER Diagram" style="max-width: 100%; max-height: 520px; border: 1px solid #cbd5e1; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" />
   </div>
   
-  <p style="margin-top: 15px;">The ER Diagram above illustrates the relational mapping across primary database tables. A single Society contains multiple Blocks, each containing multiple Flats. User accounts are linked to specific flats and assigned explicit roles (ADMIN, RESIDENT, GUARD). Core functional modules interface cleanly via foreign key relationships, ensuring data consistency across visitor logs, billing invoices, staff attendance, helpdesk tickets, and real-time emergency SOS alerts.</p>
+  <p style="margin-top: 15px;">The Entity-Relationship (ER) Diagram above illustrates the conceptual data model and relational mappings for the Smart Community Services platform, detailing core entities (User, Admin, Visitor, Property, Property Inquiry, Booking, Community Service, Payment, and Helpdesk Ticket) alongside their key attributes, relationships, and cardinalities.</p>
 `));
 
 // Page 24
