@@ -33,33 +33,35 @@ htmlPages.push(makePage(2, `
   <h2>Title: Smart Community Services</h2>
   
   <h3>Aim:</h3>
-  <p>The aim of this project is to deliver a transparent, unified digital ecosystem for gated society residents, security guards, domestic staff, and administrators to streamline property operations, visitor security, staff attendance, maintenance billing, helpdesk ticketing, and real-time emergency safety on a single platform.</p>
+  <p>The aim of this project is to deliver a transparent, unified multi-society digital ecosystem for gated community residents, security guards, domestic staff, and administrators to streamline property operations, multi-estate management, visitor security, helper ratings and attendance, maintenance billing, helpdesk ticketing, and real-time emergency safety on a single platform.</p>
   
   <h3>Description:</h3>
-  <p><strong>Project Overview:</strong> Multi-service enterprise platform combining gated society infrastructure management with integrated resident lifecycle services (pre-approved gate passes, parcel OTP verification, staff attendance tracking, maintenance ERP billing, helpdesk ticketing, community noticeboards, and real-time SOS safety radar) tailored for modern gated communities.</p>
+  <p><strong>Project Overview:</strong> Multi-service enterprise platform combining multi-society gated community infrastructure management with integrated resident lifestyle services (pre-approved gate passes, parcel OTP verification, staff attendance tracking & star ratings, maintenance ERP billing, helpdesk ticketing, community noticeboards, full administrative CRUD control, and real-time SOS safety radar) tailored for modern gated communities.</p>
   
   <p><strong>Core Portals:</strong></p>
   <ul class="arrow-list">
-    <li><strong>Resident Portal:</strong> Pre-approved visitor gate pass generation, domestic staff directory & entry pings, maintenance bill payment, helpdesk ticketing with attachment uploads, and community broadcasts.</li>
-    <li><strong>Admin Command Centre:</strong> Full society hierarchy management (blocks, flats, residents), guard allocations, staff directory management, automated maintenance invoice generation, ticket SLA tracking, and audit logging.</li>
-    <li><strong>Security Guard Console:</strong> Gate pass passcode/QR verification, parcel inward & OTP collection, daily helper attendance punching, and live SOS emergency radar with audio/visual alerts.</li>
+    <li><strong>Resident Portal:</strong> Pre-approved visitor gate pass generation, parcel arrival OTP viewing, domestic staff directory with 1-to-5 star rating & review submission, maintenance bill payment, helpdesk ticketing with attachment uploads, and community broadcasts.</li>
+    <li><strong>Admin Command Centre:</strong> Multi-society hierarchy management (societies, blocks, flats, residents, security guards, domestic staff), full-CRUD edit and delete controls across all registries, automated maintenance invoice generation, ticket SLA tracking, and audit logging.</li>
+    <li><strong>Security Guard Console:</strong> Society-scoped gate pass passcode/QR verification, parcel inward & OTP collection, daily helper attendance punching, and live SOS emergency radar with high-decibel audio/visual alerts.</li>
   </ul>
 
   <h3>Modules:</h3>
   <ul class="arrow-list">
     <li><strong>User Authentication & Profile Module:</strong> Handles secure multi-role signup, login, JWT session management, and role-based access control (RBAC) for Admins, Residents, and Security Guards.</li>
+    <li><strong>Society Infrastructure & Multi-Estate Module:</strong> Supports multiple residential societies (Prestige Tranquility, Lake View, Lake View Apartments), block definitions, and flat registry management.</li>
   </ul>
 `));
 
 // Page 3
 htmlPages.push(makePage(3, `
   <ul class="arrow-list">
-    <li><strong>Visitor Security & Gate Pass Module:</strong> Enables residents to create pre-approved visitor gate passes with 6-digit PIN codes / QR passes, and allows security guards to verify passes at the entry gate, logging real-time gate entry and exit timestamps.</li>
-    <li><strong>Parcel & Delivery Management Module:</strong> Allows gate guards to log incoming resident packages, automatically generating 4-digit collection OTPs and firing real-time socket notifications to residents.</li>
-    <li><strong>Domestic Staff & Attendance Module:</strong> Maintains a society-wide directory of maids, drivers, cooks, and plumbers, enabling guard attendance punching, resident ratings, and instant entry alerts.</li>
-    <li><strong>ERP Billing & Maintenance Ledger Module:</strong> Automates monthly society maintenance invoice generation, tracks breakdown costs (sinking fund, water, common area electricity), supports online payment integration, and maintains flat ledger entries.</li>
-    <li><strong>Helpdesk Ticketing & SLA Module:</strong> Enables residents to raise maintenance tickets (plumbing, electrical, security) with photos, track status changes (Open, In Progress, Resolved), and assign tickets to society administrators or staff.</li>
-    <li><strong>Community Noticeboard & Real-Time SOS Radar Module:</strong> Facilitates community broadcasts, amenity slot bookings (clubhouse, gym, tennis court), and features a zero-latency Socket.io emergency SOS radar that alerts security guards instantly during medical or fire emergencies.</li>
+    <li><strong>Visitor Security & Gate Pass Module:</strong> Enables residents to create pre-approved visitor gate passes with 6-digit PIN codes / QR passes, allowing security guards to verify credentials at entry gates and log entry/exit timestamps.</li>
+    <li><strong>Parcel & Delivery Management Module:</strong> Allows gate guards to log incoming packages, automatically generating 4-digit collection OTPs and firing real-time WebSockets notifications.</li>
+    <li><strong>Domestic Staff Directory & Ratings Module:</strong> Maintains a multi-category directory of daily helpers (maids, cooks, drivers, plumbers, electricians), enabling guard attendance punching, flat assignments, and resident 1-to-5 star review submissions.</li>
+    <li><strong>Admin Full-CRUD Master Management Module:</strong> Grants administrators full creation, edit (update), and deletion capabilities across all 6 core registries (Society Master, Blocks, Flats, Residents, Security Guards, Domestic Staff).</li>
+    <li><strong>ERP Billing & Maintenance Ledger Module:</strong> Automates monthly maintenance invoice generation, tracks charge breakdowns, supports online payments, and maintains flat ledgers.</li>
+    <li><strong>Helpdesk Ticketing & SLA Module:</strong> Enables residents to raise maintenance tickets with photo uploads, track status changes (Open, In Progress, Resolved), and assign tickets to staff.</li>
+    <li><strong>Community Noticeboard & Real-Time SOS Radar Module:</strong> Facilitates community broadcasts, amenity bookings, and features a zero-latency Socket.io emergency SOS radar alerting guards instantly during medical or fire emergencies.</li>
   </ul>
 `));
 
@@ -71,27 +73,28 @@ htmlPages.push(makePage(5, `
   <h1>INTRODUCTION</h1>
   
   <h3>Introduction</h3>
-  <p>The modern urban gated community landscape remains heavily fragmented, forcing residents, society management committees, and security guards to rely on disconnected tools for visitor security, helper attendance, maintenance billing, and emergency responses. This platform addresses these inefficiencies by unifying the entire society lifecycle into a single digital solution. Built on a modern decoupled architecture, the backend utilizes Node.js and Express.js with TypeScript to execute robust business logic, Prisma ORM for type-safe SQLite database operations, and Socket.io for bi-directional, real-time emergency events. The frontend leverages React 18 with Vite and Tailwind CSS to deliver an ultra-responsive, accessible user interface across desktop and mobile devices.</p>
+  <p>The modern urban gated community landscape remains heavily fragmented, forcing residents, society management committees, and security guards to rely on disconnected tools for visitor security, helper attendance, maintenance billing, and emergency responses. This platform addresses these inefficiencies by unifying the entire multi-society lifecycle into a single digital solution. Built on a modern decoupled architecture, the backend utilizes Node.js and Express.js with TypeScript to execute robust business logic, Prisma ORM for type-safe SQLite database operations, and Socket.io for bi-directional, real-time emergency events. The frontend leverages React 18 with Vite and Tailwind CSS to deliver an ultra-responsive, accessible user interface across desktop and mobile devices.</p>
 
   <h3>Overview:</h3>
   <p><strong>User-Side Activity (Resident Portal)</strong></p>
   <ul>
     <li><strong>Visitor Pass & Delivery Control:</strong> Generate pre-approved 6-digit visitor passes for guests and view parcel arrival OTPs in real-time.</li>
-    <li><strong>Domestic Helper Onboarding:</strong> Browse society daily helpers (maids, cooks, drivers), check ratings, and receive gate entry notifications.</li>
+    <li><strong>Domestic Staff & Star Ratings:</strong> Browse society daily helpers (maids, cooks, drivers, plumbers), check 1-5 star ratings, submit reviews, and receive gate entry notifications.</li>
     <li><strong>Maintenance & Billing:</strong> View monthly society maintenance invoices, inspect itemized charge breakdowns, and pay bills securely online.</li>
     <li><strong>Helpdesk & Ticketing:</strong> Submit priority tickets with photo attachments and receive live resolution updates from society managers.</li>
   </ul>
 
   <p><strong>Admin-Side Activity (Command Centre)</strong></p>
   <ul>
-    <li><strong>Infrastructure & Allocations:</strong> Add and manage society blocks, flats, resident profiles, and security guard credentials.</li>
-    <li><strong>ERP Billing Operations:</strong> Batch-generate monthly maintenance invoices, log manual payment updates, and review financial ledgers.</li>
+    <li><strong>Infrastructure & Full-CRUD Management:</strong> Add, edit, and delete records across Society Master Registry, Blocks Management, Flats Registry, Residents Directory, Security Guards Directory, and Domestic Staff Directory.</li>
+    <li><strong>Multi-Society Scoping:</strong> Filter and allocate resources across multiple residential estates (Prestige Tranquility, Lake View, Lake View Apartments).</li>
   </ul>
 `));
 
 // Page 6
 htmlPages.push(makePage(6, `
   <ul>
+    <li><strong>ERP Billing Operations:</strong> Batch-generate monthly maintenance invoices, log manual payment updates, and review financial ledgers.</li>
     <li><strong>Helpdesk Operations:</strong> Monitor open resident tickets, assign technicians, and track SLA resolution metrics.</li>
     <li><strong>Community Notices:</strong> Publish society broadcasts, emergency alerts, and amenity facility guidelines.</li>
   </ul>
