@@ -1125,5 +1125,21 @@ ${htmlPages.join('\n')}
 </html>`;
 
 const projectRoot = 'c:\\Users\\Admin\\Desktop\\smart-community-services-main';
-fs.writeFileSync(path.join(projectRoot, 'PROJECT_REPORT.html'), fullHtmlDoc, 'utf8');
+const htmlPath = path.join(projectRoot, 'PROJECT_REPORT.html');
+const pdfPath = path.join(projectRoot, 'PROJECT_REPORT.pdf');
+fs.writeFileSync(htmlPath, fullHtmlDoc, 'utf8');
 console.log("Successfully generated PROJECT_REPORT.html with " + htmlPages.length + " pages.");
+
+const { execSync } = require('child_process');
+const edgePath = `C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe`;
+if (fs.existsSync(edgePath)) {
+  console.log("Generating PROJECT_REPORT.pdf via Edge headless...");
+  const cmd = `"${edgePath}" --headless --disable-gpu --no-first-run --no-default-browser-check --print-to-pdf="${pdfPath}" "file:///${htmlPath.replace(/\\/g, '/')}"`;
+  try {
+    execSync(cmd, { stdio: 'ignore' });
+    console.log("Successfully generated PROJECT_REPORT.pdf");
+  } catch (err) {
+    console.error("Failed to generate PDF automatically:", err.message);
+  }
+}
+
